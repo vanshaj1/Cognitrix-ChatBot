@@ -291,6 +291,7 @@
                     success: function (response) {
                         $('#message-box').text('Done!').fadeOut(3000); // Show done message
                         $('#youtubeLink').val('');
+                        location.reload();  // Reload the page to reflect changes
                     },
                     error: function (xhr) {
                         $('#message-box').text(xhr.responseJSON.error).fadeOut(3000); // Show error message

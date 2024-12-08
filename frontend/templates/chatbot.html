@@ -107,11 +107,18 @@
 
 
 {% block content %}
+{% if message %}
+        <div id="myModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <p>{{ message }}</p>
+            </div>
+        </div>
+{% endif %}
 <div class="chat-container">
   <div class="card flex-grow-1">
     <div class="card-header ">Cognitrix Doubt Resolution</div>
     <div class="card-body messages-box">
-      
       <ul class="list-unstyled messages-list">
         
         <li class="message received">
@@ -256,10 +263,35 @@
       });
   }
   window.addEventListener('scroll', function() {
-    var loaderContainer = document.querySelector('.loader-container');
-    var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    var loaderTop = scrollTop + window.innerHeight / 2 - loaderContainer.offsetHeight / 2;
-    loaderContainer.style.top = loaderTop + 'px';
-});
+      var loaderContainer = document.querySelector('.loader-container');
+      var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      var loaderTop = scrollTop + window.innerHeight / 2 - loaderContainer.offsetHeight / 2;
+      loaderContainer.style.top = loaderTop + 'px';
+  });
+
+
+
+
+  // Function to show the modal
+  function showModal() {
+    var modal = document.getElementById("myModal");
+    modal.style.display = "block";
+  }
+
+  // Function to close the modal
+  function closeModal() {
+    var modal = document.getElementById("myModal");
+    modal.style.display = "none";
+  }
+
+  // Event listener to close the modal when the user clicks on <span> (x)
+  document.querySelector(".close").onclick = function() {
+    closeModal();
+  }
+
+  // Show the modal when the page loads if there is a message
+  {% if message %}
+    window.onload = showModal;
+  {% endif %}
 </script>
 {% endblock %}

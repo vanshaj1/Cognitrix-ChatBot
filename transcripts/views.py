@@ -128,6 +128,8 @@ import re
 import os
 from openpyxl import Workbook, load_workbook
 import requests
+import csv
+import frontend.LLM_model as LLM
 
 # Add your YouTube Data API key here
 YOUTUBE_API_KEY = 'AIzaSyCW6H06Tz-Hjph65jtk4WoUXF4u-RXrH6E'
@@ -147,25 +149,30 @@ def extract_video_or_playlist_id(youtube_url):
     return None
 
 # Function to save transcript to Excel
-def save_transcript_to_excel(video_id, transcript_text, video_link, playlist_name):
-    file_path = 'transcripts/transcripts.xlsx'
+def save_transcript_to_csv(video_id, transcript_text, video_link, playlist_name):
+    file_path = 'transcripts/transcripts.csv'
+    
+    # Create the directory if it doesn't exist
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
-    # Create or load the workbook
-    if os.path.exists(file_path):
-        workbook = load_workbook(file_path)
-        sheet = workbook.active
-    else:
-        workbook = Workbook()
-        sheet = workbook.active
-        # Add headers for new sheet
-        sheet.append(['Playlist Name', 'Video ID', 'Transcript', 'Video Link', 'Video Link + Transcript'])
+    # Check if the file exists
+    file_exists = os.path.exists(file_path)
 
-    # Format the combined value with line breaks
-    combined_value = f"Link: {video_link}\nTranscript: {transcript_text}"
+    # Open the CSV file in append mode
+    with open(file_path, mode='a', newline='', encoding='utf-8') as csvfile:
+        writer = csv.writer(csvfile)
 
-    # Append the row data to the sheet
-    sheet.append([playlist_name, video_id, transcript_text, video_link, combined_value])
-    workbook.save(file_path)
+        # Write headers if the file is new
+        if not file_exists:
+            writer.writerow(['Playlist Name', 'Video ID', 'Transcript', 'Video Link', 'Video Link + Transcript'])
+
+        # Format the combined value with line breaks
+        combined_value = f"Link: {video_link}\nTranscript: {transcript_text}"
+
+        # Append the row data
+        writer.writerow([playlist_name, video_id, transcript_text, video_link, combined_value])
+
+    print(f"Transcript saved to {file_path}")
 
 # Function to get all video IDs from a YouTube playlist
 def get_video_ids_from_playlist(playlist_id):
@@ -216,10 +223,11 @@ def get_transcript(request):
                         transcript = YouTubeTranscriptApi.get_transcript(video_id)
                         transcript_text = " ".join([entry['text'] for entry in transcript])
                         video_url = f"https://www.youtube.com/watch?v={video_id}"
-                        save_transcript_to_excel(video_id, transcript_text, video_url, playlist_name)
+                        save_transcript_to_csv(video_id, transcript_text, video_url, playlist_name)
                     except Exception as e:
                         print(f"Error getting transcript for video {video_id}: {str(e)}")
                 
+                LLM.init_LLM()
                 return JsonResponse({'message': f'Transcripts for {len(video_ids)} videos saved successfully!'})
 
             elif 'video_id' in extracted_ids:
@@ -228,44 +236,61 @@ def get_transcript(request):
                 transcript = YouTubeTranscriptApi.get_transcript(video_id)
                 transcript_text = " ".join([entry['text'] for entry in transcript])
                 video_url = f"https://www.youtube.com/watch?v={video_id}"
-                save_transcript_to_excel(video_id, transcript_text, video_url, "")
+                save_transcript_to_csv(video_id, transcript_text, video_url, "")
                 return JsonResponse({'message': 'Transcript successfully saved!'})
-
+            
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 def remove_playlist(request, playlist_name):
-    file_path = 'transcripts/transcripts.xlsx'
+    file_path = 'transcripts/transcripts.csv'
 
     if not os.path.exists(file_path):
-        return JsonResponse({'error': 'Excel file does not exist'}, status=404)
-
-    workbook = load_workbook(file_path)
-    sheet = workbook.active
+        return JsonResponse({'error': 'CSV file does not exist'}, status=404)
 
     rows_to_keep = []
-    for row in sheet.iter_rows(values_only=True):
-        if row[0] != playlist_name:  # Keep rows that don't match the playlist name
-            rows_to_keep.append(row)
 
-    # Clear existing sheet and write back the rows to keep
-    sheet.delete_rows(1, sheet.max_row)
-    for row in rows_to_keep:
-        sheet.append(row)
+    # Read the CSV file and filter out rows matching the playlist_name
+    with open(file_path, mode='r', encoding='utf-8') as csvfile:
+        reader = csv.reader(csvfile)
+        headers = next(reader)  # Read the header row
+        for row in reader:
+            if row[0] != playlist_name:  # Keep rows that don't match the playlist name
+                rows_to_keep.append(row)
 
-    workbook.save(file_path)
+    # Clear the CSV by opening it in write mode and writing back only the filtered rows
+    with open(file_path, mode='w', newline='', encoding='utf-8') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(headers)  # Write the header row
+        writer.writerows(rows_to_keep)  # Write the filtered rows
+
+
+    isEmpty = False  # Variable to store message
+    # Read CSV and check if it contains rows
+    with open(file_path, mode='r', encoding='utf-8') as csvfile:
+        reader = csv.reader(csvfile)
+        rows = list(reader)
+
+        if len(rows) <= 1:  # Only header or no data
+            isEmpty = True
+    
+    if isEmpty == False:
+        LLM.init_LLM()
+
     return JsonResponse({'message': f'Playlist "{playlist_name}" removed successfully!'})
 
 def index(request):
-    # Load the playlists to display on the homepage
+   # Load the playlists to display on the homepage
     playlists = []
-    file_path = 'transcripts/transcripts.xlsx'
+    file_path = 'transcripts/transcripts.csv'
+
     if os.path.exists(file_path):
-        workbook = load_workbook(file_path)
-        sheet = workbook.active
-        for row in sheet.iter_rows(min_row=2, values_only=True):
-            playlists.append(row[0])  # Append the playlist name
+        with open(file_path, mode='r', encoding='utf-8') as csvfile:
+            reader = csv.reader(csvfile)
+            next(reader)  # Skip the header row
+            for row in reader:
+                playlists.append(row[0])  # Append the playlist name (first column)
 
     return render(request, 'transcripts/index.html', {'playlists': set(playlists)})  # Return unique playlist names
