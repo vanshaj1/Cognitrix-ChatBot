@@ -62,11 +62,9 @@ def init_LLM():
 
 
 
-
-init_LLM()
-
 #***************** Ask Query function *****************
 def ask_Query(Query):
+    init_LLM()
     # change_detection()
     question = Query
     result = Question_Answer_Chain.invoke({"input": question})
