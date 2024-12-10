@@ -40,14 +40,8 @@ GeminiEmbeddingModel = GoogleGenerativeAIEmbeddings(model="models/embedding-001"
 
 #************************** Logic *****************************
 Question_Answer_Chain = None
- #*******************************Inference******************************
-def init_LLM():
-    global Question_Answer_Chain
-    loader = CSVLoader("transcripts/transcripts.csv")
-    documents = loader.load()
-    vector_index = Chroma.from_documents(documents, GeminiEmbeddingModel)
 
-    prompt = ChatPromptTemplate.from_template("""Explain the about the Question and Give its detailed answer with the at least two link provided in context but links are mandatory to give:
+prompt = ChatPromptTemplate.from_template("""Explain the about the Question and Give its detailed answer with the at least two link provided in context but links are mandatory to give:
 
         <context>
         {context}
@@ -55,16 +49,25 @@ def init_LLM():
 
         Question: {input}""")
 
-    document_retrieval_chain = create_stuff_documents_chain(Gemini_pro_llm, prompt)
+document_retrieval_chain = create_stuff_documents_chain(Gemini_pro_llm, prompt)
+
+
+
+ #*******************************Inference******************************
+def init_LLM():
+    global Question_Answer_Chain
+    loader = CSVLoader("transcripts/transcripts.csv")
+    documents = loader.load()
+    vector_index = Chroma.from_documents(documents, GeminiEmbeddingModel)
 
     retriever = vector_index.as_retriever()
     Question_Answer_Chain = create_retrieval_chain(retriever, document_retrieval_chain)
 
 
 
+init_LLM()
 #***************** Ask Query function *****************
 def ask_Query(Query):
-    init_LLM()
     # change_detection()
     question = Query
     result = Question_Answer_Chain.invoke({"input": question})
