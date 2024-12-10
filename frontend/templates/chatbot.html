@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+
+{% block styles %}
+<style>
+  body, html {
+    height: 100%;
+    background-color: #e0f7fa; /* Light Cyan */
+    position: relative; 
+  }
+
+  .messages-box {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .messages-list {
+    padding-left: 0;
+  }
+
+  .message {
+    margin-bottom: 30px;
+    list-style: none;
+  }
+
+  .message-text {
+    padding: 10px;
+    border-radius: 100px;
+  }
+
+  .sent {
+    background-color: #a7ffeb; /* Seafoam Green */
+    border-radius: 10px;
+    align-self: flex-end;
+  }
+
+  .received {
+    background-color: #b2ebf2; /* Light Blue */
+    border-radius: 10px;
+    align-self: flex-start;
+  }
+
+  .message-form {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 10px;
+    background-color: #3949ab; /* Blue */
+  }
+
+  .message-input {
+    flex: 1;
+    border-radius: 5px;
+    border-right: none;
+  }
+
+  .btn-send {
+    border-radius: 5px;
+  }
+
+  .chat-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    
+  }
+  .card-body{
+    background-color: #e0f7fa; 
+    background-image: url('https://png.pngtree.com/background/20230512/original/pngtree-sport-background-picture-image_2502918.jpg'); 
+    background-size: cover; 
+    background-position: center;
+  }
+  .card-header {
+    background-color: #3949ab; /* Blue */
+    color: #fff; /* White text color */
+    font-size: 1.5rem; /* Adjust font size */
+    font-weight: bold; /* Make text bold */
+    text-align: center; /* Center text */
+    padding: 10px 0; /* Add padding */
+  }
+
+  .loader-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.loader {
+    border: 8px solid #f3f3f3; /* Light grey */
+    border-top: 8px solid #3498db; /* Blue */
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+
+
+{% endblock %}
+
+
+{% block content %}
+{% if message %}
+        <div id="myModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <p>{{ message }}</p>
+            </div>
+        </div>
+{% endif %}
+<div class="chat-container">
+  <div class="card flex-grow-1">
+    <div class="card-header ">Cognitrix Doubt Resolution</div>
+    <div class="card-body messages-box">
+      <ul class="list-unstyled messages-list">
+        
+        <li class="message received">
+          <div class="message-text">
+            <div class="message-sender">
+              <b>Assistant</b>
+            </div>
+            <div class="message-content">
+              Hi, Please ask your doubt, I will be happy in resolving them
+            </div>
+          </div>
+        </li>
+      </ul>
+      
+    </div>
+    
+  </div>
+  <form class="message-form">
+    {%csrf_token%}
+    <div class="input-group">
+      <input type="text" class="form-control message-input" placeholder="Type your message...">
+      <div class="input-group-append">
+        <button type="submit" class="btn btn-primary btn-send">Send</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="exampleModalLong" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="exampleModalLongTitle">Thank you for your feedback</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!--Loader-->
+ <div class="loader-container" style="display:none;">
+        <div class="loader"></div>
+  </div>
+
+<script>
+  const messagesList = document.querySelector('.messages-list');
+  const messageForm = document.querySelector('.message-form');
+  const messageInput = document.querySelector('.message-input');
+  const sendButton = document.querySelector('.btn-send'); 
+  const loader = document.querySelector(".loader-container");
+
+  messageForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    sendButton.disabled = true;
+
+    const message = messageInput.value.trim();
+    if (message.length === 0) {
+      sendButton.disabled = false;
+      return;
+    }
+
+    const messageItem = document.createElement('li');
+    messageItem.classList.add('message', 'sent');
+    messageItem.innerHTML = `
+        <div class="message-text">
+            <div class="message-sender">
+                <b>You</b>
+            </div>
+            <div class="message-content">
+                ${message}
+            </div>
+        </div>`;
+    messagesList.appendChild(messageItem);
+
+    messageInput.value = '';
+    loader.style.display = "block";
+    generate_response(message)
+   
+  });
+
+  function generate_response(message){
+    fetch('', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        'message': message
+      })
+    })
+      .then(response => response.json())
+      .then(data => {
+        //let pre_processed_message = message.replace(/'/g, '');
+        const response = data.response;
+        const messageItem = document.createElement('li');
+        messageItem.classList.add('message', 'received');
+        messageItem.innerHTML = `
+        <div class="message-text">
+          <div class="message-sender">
+              <b>AI Chatbot</b>
+          </div>
+          <div class="message-content">
+              ${response}
+              <button class="btn btn-primary" data-toggle="modal" data-target="#exampleModalLong">👍</button>
+              <button class="btn btn-dark" onclick='re_generate("${message}")'>👎</button>
+          </div>
+      </div>
+          `;
+        messagesList.appendChild(messageItem);
+        loader.style.display = "none";
+        sendButton.disabled = false;
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        // Re-enable the send button in case of an error
+        sendButton.disabled = false;
+      });
+  }
+
+
+  function re_generate(message){
+    loader.style.display = "block";
+    fetch('paraphrase', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        'csrfmiddlewaretoken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+        'message': message
+      })
+    })
+      .then(response => response.json())
+      .then(data => {
+        const response = data.response;
+        generate_response(response)
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        // Re-enable the send button in case of an error
+        sendButton.disabled = false;
+      });
+  }
+  window.addEventListener('scroll', function() {
+      var loaderContainer = document.querySelector('.loader-container');
+      var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      var loaderTop = scrollTop + window.innerHeight / 2 - loaderContainer.offsetHeight / 2;
+      loaderContainer.style.top = loaderTop + 'px';
+  });
+
+
+
+
+  // Function to show the modal
+  function showModal() {
+    var modal = document.getElementById("myModal");
+    modal.style.display = "block";
+  }
+
+  // Function to close the modal
+  function closeModal() {
+    var modal = document.getElementById("myModal");
+    modal.style.display = "none";
+  }
+
+  // Event listener to close the modal when the user clicks on <span> (x)
+  document.querySelector(".close").onclick = function() {
+    closeModal();
+  }
+
+  // Show the modal when the page loads if there is a message
+  {% if message %}
+    window.onload = showModal;
+  {% endif %}
+</script>
+{% endblock %}
