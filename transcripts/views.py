@@ -100,10 +100,10 @@ def get_transcript(request):
                 video_ids = get_video_ids_from_playlist(playlist_id)
 
                 print('Youtube API Call')
-                print(video_id)
+                print(video_ids)
 
                 print('YoutubeTranscript API call')
-                
+
                 for video_id in video_ids:
                     try:
                         transcript = YouTubeTranscriptApi.get_transcript(video_id)
