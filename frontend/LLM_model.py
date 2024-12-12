@@ -9,6 +9,14 @@ from langchain_community.vectorstores import Chroma
 # from langchain.chains import RetrievalQA
 # from langchain import PromptTemplate
 import os
+from dotenv import load_dotenv
+
+
+# Load environment variables from a .env file
+load_dotenv()
+
+# Add your GEMINI API KEY here
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 
@@ -25,7 +33,7 @@ from langchain.chains import create_retrieval_chain
 
  #************************ Model *************************
 Gemini_pro_llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash",
-                                    google_api_key="AIzaSyDzePu9FJjmdFb0nYtUcxERtn_vn8cbYto",
+                                    google_api_key=GEMINI_API_KEY,
                                     temperature=0,
                                     convert_system_message_to_human=True,
                                     safety_settings={
@@ -35,7 +43,7 @@ Gemini_pro_llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash",
     HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
 })
 
-GeminiEmbeddingModel = GoogleGenerativeAIEmbeddings(model="models/embedding-001",google_api_key="AIzaSyDzePu9FJjmdFb0nYtUcxERtn_vn8cbYto")
+GeminiEmbeddingModel = GoogleGenerativeAIEmbeddings(model="models/embedding-001",google_api_key=GEMINI_API_KEY)
 
 
 #************************** Logic *****************************
@@ -106,44 +114,44 @@ def ask_Query(Query):
 #         init_LLM()
 
 
-def read_csv(file_path):
-    """Read a CSV file and return its content as a list of rows."""
-    with open(file_path, mode='r', newline='', encoding='utf-8') as file:
-        reader = csv.reader(file)
-        return list(reader)
+# def read_csv(file_path):
+#     """Read a CSV file and return its content as a list of rows."""
+#     with open(file_path, mode='r', newline='', encoding='utf-8') as file:
+#         reader = csv.reader(file)
+#         return list(reader)
 
-def write_csv(file_path, data):
-    """Write data to a CSV file."""
-    with open(file_path, mode='w', newline='', encoding='utf-8') as file:
-        writer = csv.writer(file)
-        writer.writerows(data)
+# def write_csv(file_path, data):
+#     """Write data to a CSV file."""
+#     with open(file_path, mode='w', newline='', encoding='utf-8') as file:
+#         writer = csv.writer(file)
+#         writer.writerows(data)
 
-def change_detection():
-    original = "transcripts/transcripts.csv"
-    backup = "transcripts/transcripts_copy.csv"
+# def change_detection():
+#     original = "transcripts/transcripts.csv"
+#     backup = "transcripts/transcripts_copy.csv"
 
-    # Edge case: Check if original file exists
-    if not os.path.exists(original):
-        raise FileNotFoundError("Data is not present, please add data first.")
+#     # Edge case: Check if original file exists
+#     if not os.path.exists(original):
+#         raise FileNotFoundError("Data is not present, please add data first.")
 
-    # Check if backup file exists
-    if not os.path.exists(backup):
-        print(f"{backup} does not exist. Creating it from {original}.")
-        original_data = read_csv(original)
-        write_csv(backup, original_data)
-        init_LLM()
-        return
+#     # Check if backup file exists
+#     if not os.path.exists(backup):
+#         print(f"{backup} does not exist. Creating it from {original}.")
+#         original_data = read_csv(original)
+#         write_csv(backup, original_data)
+#         init_LLM()
+#         return
 
-    # Read the contents of the two CSV files
-    original_data = read_csv(original)
-    backup_data = read_csv(backup)
+#     # Read the contents of the two CSV files
+#     original_data = read_csv(original)
+#     backup_data = read_csv(backup)
 
-    # Compare the content of the two files
-    if original_data == backup_data:
-        print("CSV files have the same content. No action taken.")
-    else:
-        print("CSV files differ.")
-        print("Adding data to csv...")
-        write_csv(backup, original_data)
-        print("Initializing LLM...")
-        init_LLM()
+#     # Compare the content of the two files
+#     if original_data == backup_data:
+#         print("CSV files have the same content. No action taken.")
+#     else:
+#         print("CSV files differ.")
+#         print("Adding data to csv...")
+#         write_csv(backup, original_data)
+#         print("Initializing LLM...")
+#         init_LLM()
