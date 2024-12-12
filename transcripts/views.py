@@ -114,7 +114,7 @@ def get_transcript(request):
                     except Exception as e:
                         print(f"Error getting transcript for video {video_id}: {str(e)}")
                 
-                LLM.init_LLM()
+                # LLM.init_LLM()
                 return JsonResponse({'message': f'Transcripts for {len(video_ids)} videos saved successfully!'})
 
             elif 'video_id' in extracted_ids:
@@ -124,7 +124,7 @@ def get_transcript(request):
                 transcript_text = " ".join([entry['text'] for entry in transcript])
                 video_url = f"https://www.youtube.com/watch?v={video_id}"
                 save_transcript_to_csv(video_id, transcript_text, video_url, "")
-                LLM.init_LLM()
+                # LLM.init_LLM()
                 return JsonResponse({'message': 'Transcript successfully saved!'})
             
         except Exception as e:
