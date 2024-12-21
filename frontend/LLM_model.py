@@ -64,10 +64,11 @@ document_retrieval_chain = create_stuff_documents_chain(Gemini_pro_llm, prompt)
  #*******************************Inference******************************
 def init_LLM():
     global Question_Answer_Chain
-    loader = CSVLoader("transcripts/transcripts.csv")
-    documents = loader.load()
-    vector_index = Chroma.from_documents(documents, GeminiEmbeddingModel)
-
+    # loader = CSVLoader("transcripts/transcripts.csv")
+    # documents = loader.load()
+    # vector_index = Chroma.from_documents(documents, GeminiEmbeddingModel, persist_directory = "./chatbot_vectordb_dir")
+    # vector_index.persist()
+    vector_index = Chroma(persist_directory="./chatbot_vectordb_dir", embedding_function=GeminiEmbeddingModel)
     retriever = vector_index.as_retriever()
     Question_Answer_Chain = create_retrieval_chain(retriever, document_retrieval_chain)
 
