@@ -251,6 +251,16 @@
 
 <body>
     <h1>YouTube Transcript Extractor</h1>
+    <button style="
+    margin-left: 83%;
+    margin-top: -1%;
+    padding: 1%;
+    width: 16%;
+       "
+    class="embedding-btn">Create Embeddings</button>
+
+    <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+
     <div id="youtube-form">
         <form id="transcript-form">
             <label for="youtubeLink">YouTube Video or Playlist Link:</label>
@@ -317,6 +327,27 @@
                         }
                     });
                 }
+            });
+
+            $('.embedding-btn').click(function () {
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                $.ajax({
+                    type: 'POST',
+                    url: '{% url "create_embeddings" %}',
+                    headers: {
+                        'X-CSRFToken': csrfToken // Add CSRF token to the headers
+                    },
+                    data: {
+                        // Include any data to be sent to the server
+                    },
+                    success: function (response) {
+                        $('#message-box').text('Done!').fadeOut(3000); // Show done message
+                    },
+                    error: function (xhr) {
+                        $('#message-box').text(xhr.responseJSON.error).fadeOut(3000); // Show error message
+                    }
+                });
             });
         });
     </script>

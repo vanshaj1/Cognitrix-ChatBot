@@ -6,15 +6,22 @@ import re
 import os
 import requests
 import csv
-import frontend.LLM_model as LLM
 from dotenv import load_dotenv
-
+from langchain_community.vectorstores import Chroma
+from langchain_community.document_loaders import CSVLoader
+from dotenv import load_dotenv
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 # Load environment variables from a .env file
 load_dotenv()
 
+# Add your GEMINI API KEY here
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
 # Add your YouTube Data API key here
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
+
+GeminiEmbeddingModel = GoogleGenerativeAIEmbeddings(model="models/embedding-001",google_api_key=GEMINI_API_KEY)
 
 # Helper function to extract video ID or playlist ID
 def extract_video_or_playlist_id(youtube_url):
@@ -184,6 +191,14 @@ def index(request):
 
     return render(request, 'transcripts/index.html', {'playlists': set(playlists)})  # Return unique playlist names
 
+
+def create_embeddings(request):
+    loader = CSVLoader("transcripts/transcripts.csv")
+    documents = loader.load()
+    vector_index = Chroma.from_documents(documents, GeminiEmbeddingModel, persist_directory = "./chatbot_vectordb_dir")
+    vector_index.persist()
+
+    return JsonResponse({'message': f'embeddings created successfully!'})
 
 #**********************************************Using service account*******************************************
 # from django.shortcuts import render
